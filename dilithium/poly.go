@@ -124,7 +124,7 @@ func rej_gamma1m1(a []uint32, buf []byte) int {
 		var t0, t1 uint32
 		t0 = uint32(buf[pos])
 		t0 |= uint32(buf[pos+1]) << 8
-		t0 |= uint32(buf[pos+1]) << 16
+		t0 |= uint32(buf[pos+2]) << 16
 		t0 &= 0xFFFFF
 		t1 = uint32(buf[pos+2]) >> 4
 		t1 |= uint32(buf[pos+3]) << 4

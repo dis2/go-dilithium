@@ -23,8 +23,8 @@ func expand_mat(mat *[K]polyvecl, rho *[SEEDBYTES]byte) {
 
 			for ctr < N {
 				val = uint32(outbuf[pos])
-				val |= uint32(outbuf[pos]) << 8
-				val |= uint32(outbuf[pos]) << 16
+				val |= uint32(outbuf[pos+1]) << 8
+				val |= uint32(outbuf[pos+2]) << 16
 				val &= 0x7FFFFF
 				pos += 3
 
@@ -59,7 +59,7 @@ func challenge(c *poly, mu *[CRHBYTES]byte, w1 *polyveck) {
 	mask := uint64(1)
 
 	*c = poly{}
-	pos := 0
+	pos := 8
 	for i := 196; i < 256; i++ {
 		var b int
 		// randomly truncated hash outputs, huh?
@@ -148,7 +148,19 @@ func crypto_sign_keypair(seed []byte, pk *[PK_SIZE_PACKED]byte, sk *[SK_SIZE_PAC
 	return seed
 }
 
-func crypto_sign_detached(sm *[SIG_SIZE_PACKED]byte, m []byte, sk *[SK_SIZE_PACKED]byte) {
+func crypto_sign_attached(sm *[SIG_SIZE_PACKED]byte, m []byte, sk *[SK_SIZE_PACKED]byte) {
+	z, h, c := crypto_sign_raw(m, sk)
+	/* Write signature */
+	pack_sig(sm, z, h, c)
+}
+func crypto_sign_detached(sm *[SIG_SIZE_PACKED]byte, m []byte, sk *[SK_SIZE_PACKED]byte) []byte {
+	z, h, c := crypto_sign_raw(m, sk)
+	/* Write signature */
+	return pack_sig_detached(sm, z, h, c)
+}
+
+
+func crypto_sign_raw(m []byte, sk *[SK_SIZE_PACKED]byte) (*polyvecl,*polyveck,*poly) {
 	var rho, key [SEEDBYTES]byte
 	var tr, mu [CRHBYTES]byte
 	var s1, y, yhat, z polyvecl
@@ -245,23 +257,39 @@ rej:
 		goto rej
 	}
 
-	/* Write signature */
-	pack_sig(sm, &z, &h, &c)
+	return &z, &h, &c
 }
 
-func crypto_verify_detached(sm *[SIG_SIZE_PACKED]byte, m []byte, pk *[PK_SIZE_PACKED]byte) bool {
-	var rho [SEEDBYTES]byte
-	var tr, mu [CRHBYTES]byte
-	var c, chat, cp poly
+func crypto_verify_attached(sm *[SIG_SIZE_PACKED]byte, m []byte, pk *[PK_SIZE_PACKED]byte) bool {
 	var z polyvecl
-	var mat [K]polyvecl
-	var t1, w1, h, tmp1, tmp2 polyveck
-
+	var h polyveck
+	var c poly
 	if !unpack_sig(&z, &h, &c, sm) {
 		return false
 	}
+	return crypto_verify_raw(&z, &h, &c, m, pk)
+}
+
+func crypto_verify_detached(sm []byte, m []byte, pk *[PK_SIZE_PACKED]byte) bool {
+	var z polyvecl
+	var h polyveck
+	var c poly
+	if !unpack_sig_detached(&z, &h, &c, sm) {
+		return false
+	}
+	return crypto_verify_raw(&z, &h, &c, m, pk)
+}
+
+
+func crypto_verify_raw(z *polyvecl, h *polyveck, c *poly, m []byte, pk *[PK_SIZE_PACKED]byte) bool {
+	var rho [SEEDBYTES]byte
+	var tr, mu [CRHBYTES]byte
+	var chat, cp poly
+	var mat [K]polyvecl
+	var t1, w1, tmp1, tmp2 polyveck
+
 	unpack_pk(&rho, &t1, pk)
-	if polyvecl_chknorm(&z, GAMMA1-BETA) != 0 {
+	if polyvecl_chknorm(z, GAMMA1-BETA) != 0 {
 		return false
 	}
 
@@ -276,12 +304,12 @@ func crypto_verify_detached(sm *[SIG_SIZE_PACKED]byte, m []byte, pk *[PK_SIZE_PA
 	expand_mat(&mat, &rho)
 
 	/* Matrix-vector multiplication; compute Az - c2^dt1 */
-	polyvecl_ntt(&z)
+	polyvecl_ntt(z)
 	for i := 0; i < K; i++ {
-		polyvecl_pointwise_acc_invmontgomery(&tmp1.vec[i], &mat[i], &z)
+		polyvecl_pointwise_acc_invmontgomery(&tmp1.vec[i], &mat[i], z)
 	}
 
-	chat = c
+	chat = *c
 	poly_ntt(&chat)
 	polyveck_shiftl(&t1, D)
 	polyveck_ntt(&t1)
@@ -295,7 +323,7 @@ func crypto_verify_detached(sm *[SIG_SIZE_PACKED]byte, m []byte, pk *[PK_SIZE_PA
 
 	/* Reconstruct w1 */
 	polyveck_freeze(&tmp1)
-	polyveck_use_hint(&w1, &tmp1, &h)
+	polyveck_use_hint(&w1, &tmp1, h)
 
 	/* Call random oracle and verify challenge */
 	challenge(&cp, &mu, &w1)
@@ -311,7 +339,7 @@ func crypto_verify_detached(sm *[SIG_SIZE_PACKED]byte, m []byte, pk *[PK_SIZE_PA
 // attached sig wrappers
 func crypto_sign(msg []byte, sk *[SK_SIZE_PACKED]byte) []byte {
 	var sig [SIG_SIZE_PACKED]byte
-	crypto_sign_detached(&sig, msg, sk)
+	crypto_sign_attached(&sig, msg, sk)
 	return append(sig[:], msg...)
 }
 
@@ -322,7 +350,7 @@ func crypto_sign_open(msg []byte, pk *[PK_SIZE_PACKED]byte) []byte {
 	}
 	copy(sig[:], msg)
 	d := msg[SIG_SIZE_PACKED:]
-	if crypto_verify_detached(&sig, d, pk) {
+	if crypto_verify_attached(&sig, d, pk) {
 		return d
 	}
 	return nil
