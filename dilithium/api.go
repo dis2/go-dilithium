@@ -1,10 +1,5 @@
 // Package dilithium implements experimental post-quantum digital signatures.
-// https://eprint.iacr.org/2017/633
-//
-// The algorithm is only a submitted NIST candidate, and not standardized.
-// It's not recommended to use Dilithium in production yet, with the possible
-// exception of attaching it as accompanying signature to a classic scheme, such
-// as Ed25519.
+// The algorithm is only a NIST submitted phase 1 candidate - and not standardized.
 package dilithium
 
 // SK is the secret key.

@@ -4,7 +4,7 @@ https://eprint.iacr.org/2017/633
 
 This is a Go port of https://github.com/pq-crystals/dilithium
 
-The algorithm is only a NIST submitted **pharse 1 candidate** - and not standardized.
+The algorithm is only a NIST submitted **phase 1 candidate** - and not standardized.
 It's not recommended to use Dilithium in production, with the possible
 exception of attaching it as accompanying signature to a classic scheme, such as
 Ed25519.
