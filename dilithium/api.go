@@ -7,51 +7,52 @@
 // as Ed25519.
 package dilithium
 
-// Secret key
+// SK is the secret key.
 type SK [SK_SIZE_PACKED]byte
 
-// Public key
+// PK is the public key.
 type PK [PK_SIZE_PACKED]byte
 
-// Generate a new keypair from a given secret seed. If seed is nil, CSPRNG will
-// be used and seed will be returned you can use in the future to get same keys.
-func KeyPair(seed []byte) (pk PK, sk SK, rseed []byte) {
-	rseed = crypto_sign_keypair(seed, pk.Bytes(), sk.Bytes())
+// KeyPair will be created from the given secret seed. If seed is `nil`,
+// CSPRNG will be used. Returns the keys and the seed value ultimately used to
+// generate those.
+func KeyPair(seed []byte) (publicKey PK, secretKey SK, usedSeed []byte) {
+	rseed = crypto_sign_keypair(seed, publicKey.Bytes(), secretKey.Bytes())
 	return
 }
 
-// Return raw byte pointer representing the secret key
-func (k *SK) Bytes() *[SK_SIZE_PACKED]byte {
+// Bytes buffer representing the secret key.
+func (k *SK) Bytes() (rawSecretKeyBytes *[SK_SIZE_PACKED]byte) {
 	return (*[SK_SIZE_PACKED]byte)(k)
 }
 
-// Sign the message m, and return it with signature attached.
-// The message will grow by PK_SIZE_PACKED, the original m buffer is untouched.
-func (k *SK) Seal(m []byte) []byte {
-	return crypto_sign(m, k.Bytes())
+// Seal the message in m.
+// New buffer with original message copy with signature attached is returned.
+func (k *SK) Seal(message []byte) (sealedMessage []byte) {
+	return crypto_sign(message, k.Bytes())
 }
 
-// Sign the message m, and return the detached signature. Beware that detached
-// signatures are variable sized, but never larger than SIG_SIZE_PACKED.
-func (k *SK) Sign(m []byte) []byte {
+// Sign the message, and return a detached signature. Detached signatures are
+// variable sized, but never larger than SIG_SIZE_PACKED.
+func (k *SK) Sign(message []byte) (signature []byte) {
 	var sig [SIG_SIZE_PACKED]byte
-	return crypto_sign_detached(&sig, m, k.Bytes())
+	return crypto_sign_detached(&sig, message, k.Bytes())
 }
 
-// Return raw byte pointer representing the public key
-func (k *PK) Bytes() *[PK_SIZE_PACKED]byte {
+// Bytes returns the raw byte pointer representing the public key.
+func (k *PK) Bytes() (rawPublicKeyBytes *[PK_SIZE_PACKED]byte) {
 	return (*[PK_SIZE_PACKED]byte)(k)
 }
 
-// Verify signature on m, and return it with signature data stripped.
-// If verification fails, returns nil.
-func (k *PK) Open(m []byte) []byte {
-	return crypto_sign_open(m, k.Bytes())
+// Open the sealed message m. Returns the original message, with signature data
+// stripped. Or nil if the signature is invalid.
+func (k *PK) Open(sealedMessage []byte) (originalMessage []byte {
+	return crypto_sign_open(sealedMessega, k.Bytes())
 }
 
-// Check if message m is signed with valid signature in sig.
-func (k *PK) Verify(m []byte, sig []byte) bool {
-	return crypto_verify_detached(sig, m, k.Bytes())
+// Verify if the message is signed with a valid signature.
+func (k *PK) Verify(message []byte, signature []byte) bool {
+	return crypto_verify_detached(signature, message, k.Bytes())
 }
 
 
