@@ -21,8 +21,8 @@ func (k *SK) Bytes() (rawSecretKeyBytes *[SK_SIZE_PACKED]byte) {
 	return (*[SK_SIZE_PACKED]byte)(k)
 }
 
-// Seal the message. Return buffer with copy of the original message and signature
-// attached.
+// Seal the message. Returns buffer with a copy of the original message and
+// signature attached.
 func (k *SK) Seal(message []byte) (sealedMessage []byte) {
 	return crypto_sign(message, k.Bytes())
 }

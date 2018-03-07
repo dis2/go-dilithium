@@ -230,4 +230,42 @@ func TestSignVerify1000(t *testing.T) {
 	}
 }
 
+func BenchmarkKeyPair(b *testing.B) {
+	var seed [32]byte
+	for i := 0; i < b.N; i++ {
+		KeyPair(seed[:])
+	}
+}
+func BenchmarkSign(b *testing.B) {
+	var msg [32]byte
+	_, sk, _ := KeyPair(nil)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		msg[0] = byte(i)
+		msg[1] = byte(i>>8)
+		msg[2] = byte(i>>16)
+		sk.Sign(msg[:])
+	}
+}
+func BenchmarkVerify(b *testing.B) {
+	var msg [32]byte
+	sigs := make([][]byte, b.N)
+	pk, sk, _ := KeyPair(nil)
+	for i := 0; i < b.N; i++ {
+		msg[0] = byte(i)
+		msg[1] = byte(i>>8)
+		msg[2] = byte(i>>16)
+		sigs[i] = sk.Sign(msg[:])
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		msg[0] = byte(i)
+		msg[1] = byte(i>>8)
+		msg[2] = byte(i>>16)
+
+		if !pk.Verify(msg[:], sigs[i]) {
+			b.Fatal("verify failed")
+		}
+	}
+}
 
