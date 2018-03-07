@@ -12,7 +12,7 @@ type PK [PK_SIZE_PACKED]byte
 // CSPRNG will be used. Returns the keys and the seed value ultimately used to
 // generate those.
 func KeyPair(seed []byte) (publicKey PK, secretKey SK, usedSeed []byte) {
-	rseed = crypto_sign_keypair(seed, publicKey.Bytes(), secretKey.Bytes())
+	usedSeed = crypto_sign_keypair(seed, publicKey.Bytes(), secretKey.Bytes())
 	return
 }
 
@@ -41,8 +41,8 @@ func (k *PK) Bytes() (rawPublicKeyBytes *[PK_SIZE_PACKED]byte) {
 
 // Open the sealed message m. Returns the original message, with signature data
 // stripped. Or nil if the signature is invalid.
-func (k *PK) Open(sealedMessage []byte) (originalMessage []byte {
-	return crypto_sign_open(sealedMessega, k.Bytes())
+func (k *PK) Open(sealedMessage []byte) (originalMessage []byte) {
+	return crypto_sign_open(sealedMessage, k.Bytes())
 }
 
 // Verify if the message is signed with a valid signature.
