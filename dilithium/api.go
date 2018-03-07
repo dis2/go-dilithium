@@ -8,7 +8,7 @@ type SK [SK_SIZE_PACKED]byte
 // PK is the public key.
 type PK [PK_SIZE_PACKED]byte
 
-// KeyPair will be created from the given secret seed. If seed is `nil`,
+// KeyPair will be created from the given secret seed. If seed is nil,
 // CSPRNG will be used. Returns the keys and the seed value ultimately used to
 // generate those.
 func KeyPair(seed []byte) (publicKey PK, secretKey SK, usedSeed []byte) {
@@ -21,8 +21,8 @@ func (k *SK) Bytes() (rawSecretKeyBytes *[SK_SIZE_PACKED]byte) {
 	return (*[SK_SIZE_PACKED]byte)(k)
 }
 
-// Seal the message in m.
-// New buffer with original message copy with signature attached is returned.
+// Seal the message. Return buffer with copy of the original message and signature
+// attached.
 func (k *SK) Seal(message []byte) (sealedMessage []byte) {
 	return crypto_sign(message, k.Bytes())
 }

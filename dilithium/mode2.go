@@ -5,6 +5,8 @@
 package dilithium
 
 const (
+	// Settings for the current strength mode "recommended".
+	// You can change the mode used via build tags mode0 to to mode3.
 	K        = 5
 	L        = 4
 	ETA      = 5

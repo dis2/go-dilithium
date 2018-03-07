@@ -1,10 +1,21 @@
 package dilithium
 
 const (
+	// Public key buffer size. Always exact this size.
+	PK_SIZE_PACKED  = (SEEDBYTES + K*POLT1_SIZE_PACKED)
+
+	// Private key buffer size. Always exact this size.
+	SK_SIZE_PACKED  = (2*SEEDBYTES + (L+K)*POLETA_SIZE_PACKED + CRHBYTES + K*POLT0_SIZE_PACKED)
+
+	// Signature size. Attached signatures are exactly this big.
+	// Detached signatures tend to be a bit smaller, this being the upper bound.
+	SIG_SIZE_PACKED = (L*POLZ_SIZE_PACKED + (OMEGA + K) + (N/8 + 8))
+
+	// These are all private for porting reasons, disregard the upper case.
 	SHAKE256_RATE = 136
 	SHAKE128_RATE = 168
 	SEEDBYTES     = 32
-	CRHBYTES      = 48 // hash of public key
+	CRHBYTES      = 48         // hash of public key
 	N             = 256
 	Q             = 8380417
 	QINV          = 4236238847 // -q^(-1) mod 2^32
@@ -16,6 +27,7 @@ const (
 	GAMMA2        = (GAMMA1 / 2)
 	ALPHA         = (2 * GAMMA2)
 
+	// Polynomial sizes
 	POL_SIZE_PACKED    = ((N * QBITS) / 8)
 	POLT1_SIZE_PACKED  = ((N * (QBITS - D)) / 8)
 	POLT0_SIZE_PACKED  = ((N * D) / 8)
@@ -25,10 +37,6 @@ const (
 
 	POLVECK_SIZE_PACKED = (K * POL_SIZE_PACKED)
 	POLVECL_SIZE_PACKED = (L * POL_SIZE_PACKED)
-
-	PK_SIZE_PACKED  = (SEEDBYTES + K*POLT1_SIZE_PACKED)
-	SK_SIZE_PACKED  = (2*SEEDBYTES + (L+K)*POLETA_SIZE_PACKED + CRHBYTES + K*POLT0_SIZE_PACKED)
-	SIG_SIZE_PACKED = (L*POLZ_SIZE_PACKED + (OMEGA + K) + (N/8 + 8))
 )
 
 var zetas = [N]uint32{
